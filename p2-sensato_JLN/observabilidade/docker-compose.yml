@@ -1,0 +1,33 @@
+# Prometheus + Grafana para a MS-AV-02
+# Subir:  docker compose up -d   (dentro da pasta observabilidade)
+# - Prometheus: http://localhost:9090
+# - Grafana:    http://localhost:3000  (admin / admin) - dashboard "MS-AV-02 - Login"
+services:
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: av02-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: av02-grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      # somente para ambiente local: permite ver o dashboard sem login
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      # datasource do Prometheus e dashboard carregados automaticamente
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
